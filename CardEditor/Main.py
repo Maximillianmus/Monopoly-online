@@ -32,15 +32,18 @@ def main():
                     active = False
                 # Change the current color of the input box.
                 color = color_active if active else color_inactive
-            if event.type == pg.KEYDOWN:
+            else:
                 if active:
-                    if event.key == pg.K_RETURN:
-                        print(text)
-                        text = ''
-                    elif event.key == pg.K_BACKSPACE:
-                        text = text[:-1]
-                    else:
+                    if event.type == pg.KEYDOWN:
                         text += event.unicode
+
+        keys = pg.key.get_pressed()
+        if active:
+            if keys[pg.K_RETURN]:
+                print(text)
+                text = ''
+            elif keys[pg.K_BACKSPACE]:
+                text = text[:-1]
 
         screen.fill((30, 30, 30))
         # Render the current text.
