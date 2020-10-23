@@ -1,0 +1,1 @@
+print("din mamma")
