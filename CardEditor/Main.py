@@ -1,9 +1,13 @@
-# This is a prgoram that will work as a card editor, it will be used to create cards for boardgames, the cards will be created by making a XML entry in the card XML. It will also save a picture that is the card itself.
+# This is a prgoram that will work as a card editor, it will be used to create cards for boardgames,
+#  the cards will be created by making a XML entry in the card XML.
+#  It will also save a picture that is the card itself.
 import pygame as pg
 
 
-# this is copy pasted code that shows an implementation of a textbox, use this as a basis for the writing boxes for the game.
+# this is  code that shows an implementation of a textbox,
+# use this as a basis for the writing boxes for the game.
 def main():
+    """ This is the main function of the program """
     screen = pg.display.set_mode((640, 480))
     font = pg.font.Font(None, 32)
     clock = pg.time.Clock()
