@@ -4,6 +4,7 @@
 import pygame as pg
 
 
+
 # this is  code that shows an implementation of a textbox,
 # use this as a basis for the writing boxes for the game.
 def main():
@@ -18,8 +19,19 @@ def main():
     active = False
     text = ''
     done = False
-
+    time = pg.time.get_ticks()
     while not done:
+
+        keys = pg.key.get_pressed()
+        if active:
+            if keys[pg.K_RETURN] and text != '':
+                print(text)
+                text = ''
+            #not optimal soloution, it would be better if we first had a event that if activated started an if statment after some time that check if we are still holding the button
+            elif keys[pg.K_BACKSPACE] and abs(time-pg.time.get_ticks()) > 100:
+                time = pg.time.get_ticks()
+                text = text[:-1]
+
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 done = True
@@ -34,16 +46,9 @@ def main():
                 color = color_active if active else color_inactive
             else:
                 if active:
-                    if event.type == pg.KEYDOWN:
+                    if event.type == pg.KEYDOWN and event.key != pg.K_RETURN and event.key != pg.K_BACKSPACE:
                         text += event.unicode
 
-        keys = pg.key.get_pressed()
-        if active:
-            if keys[pg.K_RETURN]:
-                print(text)
-                text = ''
-            elif keys[pg.K_BACKSPACE]:
-                text = text[:-1]
 
         screen.fill((30, 30, 30))
         # Render the current text.
