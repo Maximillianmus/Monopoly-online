@@ -3,13 +3,17 @@
 #  It will also save a picture that is the card itself.
 import pygame as pg
 
+# constants
+WINDOW_WIDTH = 1000
+WINDOW_HEIGHT = 1000
+
 
 
 # this is  code that shows an implementation of a textbox,
 # use this as a basis for the writing boxes for the game.
 def main():
     """ This is the main function of the program """
-    screen = pg.display.set_mode((640, 480))
+    screen = pg.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     font = pg.font.Font(None, 32)
     clock = pg.time.Clock()
     input_box = pg.Rect(100, 100, 140, 32)
@@ -19,7 +23,7 @@ def main():
     active = False
     text = ''
     done = False
-    time = pg.time.get_ticks()
+    type_time = pg.time.get_ticks()
     while not done:
 
         keys = pg.key.get_pressed()
@@ -28,8 +32,8 @@ def main():
                 print(text)
                 text = ''
             #not optimal soloution, it would be better if we first had a event that if activated started an if statment after some time that check if we are still holding the button
-            elif keys[pg.K_BACKSPACE] and abs(time-pg.time.get_ticks()) > 100:
-                time = pg.time.get_ticks()
+            elif keys[pg.K_BACKSPACE] and abs(type_time-pg.time.get_ticks()) > 200:
+                type_time = pg.time.get_ticks()
                 text = text[:-1]
 
         for event in pg.event.get():
