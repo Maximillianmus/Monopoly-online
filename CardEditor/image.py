@@ -34,6 +34,11 @@ class Image:
         """ returns the image of this object """
         return self.image
 
+    def get_rect(self):
+        """ returns the rect of the image"""
+        return self.image.get_rect()
+
+
     def render_dynamic(self, screen, game_object_rect, camera):
         """ renders the image relative to the camera, the game object rect should have the same size as the the image"""
         rect = self.rect.move(game_object_rect.x - camera.w, game_object_rect.y - camera.h)
@@ -41,7 +46,6 @@ class Image:
         if rect.colliderect(camera):
             image = self.get_image()
             screen.blit(image,rect)
-
 
     def render_static(self, screen, game_object_rect):
         """ renders the image directly onto the screen, with no consideration for the camera, the game object rect should have the same size as the the image """
