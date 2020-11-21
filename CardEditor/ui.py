@@ -23,7 +23,6 @@ class Text(Ui):
         self.screen = screen
 
 
-#TODO implement activation by mouse as a function
 class TextBox(Ui):
     """ a box where you can write """
     def __init__(self, font, screen, input_box, text_color=pg.Color("black"), active_color=pg.Color("blue") ):
