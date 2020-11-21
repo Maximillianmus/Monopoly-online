@@ -2,6 +2,7 @@
 #  the cards will be created by making a XML entry in the card XML.
 #  It will also save a picture that is the card itself.
 import pygame as pg
+import ui
 
 # constants
 WINDOW_WIDTH = 1000
@@ -24,13 +25,18 @@ def main():
     text = ''
     done = False
     type_time = pg.time.get_ticks()
-    while not done:
+    text_changed = False
 
+    text_box = ui.TextBox(font,screen, pg.Rect(100,300,500,32))
+    button = ui.Button(font,screen,pg.Rect(100,400,200,50),"button")
+    press_button = ui.PressButton(font,screen,pg.Rect(100,600,200,50),"pressButton")
+    while not done:
         keys = pg.key.get_pressed()
         if active:
             if keys[pg.K_RETURN] and text != '':
                 print(text)
                 text = ''
+
             #not optimal soloution, it would be better if we first had a event that if activated started an if statment after some time that check if we are still holding the button
             elif keys[pg.K_BACKSPACE] and abs(type_time-pg.time.get_ticks()) > 200:
                 type_time = pg.time.get_ticks()
@@ -46,12 +52,21 @@ def main():
                     active = not active
                 else:
                     active = False
+
+                # check if button is pressed
+                button.if_clicked(event.pos)
+                press_button.if_clicked(event.pos)
                 # Change the current color of the input box.
+                text_box.if_clicked(event.pos)
+
                 color = color_active if active else color_inactive
             else:
                 if active:
                     if event.type == pg.KEYDOWN and event.key != pg.K_RETURN and event.key != pg.K_BACKSPACE:
                         text += event.unicode
+
+
+
 
 
         screen.fill((30, 30, 30))
@@ -64,6 +79,11 @@ def main():
         screen.blit(txt_surface, (input_box.x+5, input_box.y+5))
         # Blit the input_box rect.
         pg.draw.rect(screen, color, input_box, 2)
+
+        text_box.update_text(text)
+        text_box.render()
+        button.render()
+        press_button.render()
 
         pg.display.flip()
         clock.tick(30)

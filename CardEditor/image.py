@@ -25,8 +25,8 @@ def create_image_class_dict(directory):
 
 class Image:
     """ Image class used to manage rendering of images"""
-    def __init__(self, path, image):
-        self.path = path
+    def __init__(self, name, image):
+        self.path = name
         self.image = image
         self.rect = image.get_rect()
 
