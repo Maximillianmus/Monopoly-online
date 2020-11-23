@@ -24,12 +24,25 @@ def main():
     active = False
     text = ''
     done = False
+
+    test_view_list = []
     type_time = pg.time.get_ticks()
-    text_changed = False
+    test_view = pg.Rect(200,0,700,700)
+    
 
     text_box = ui.TextBox(font,screen, pg.Rect(100,300,500,32))
+    text_box.set_viewport(test_view)
+
     button = ui.Button(font,screen,pg.Rect(100,400,200,50),"button")
+    button.set_viewport(test_view)
+
     press_button = ui.PressButton(font,screen,pg.Rect(100,600,200,50),"pressButton")
+    press_button.set_viewport(test_view)
+
+    test_view_list.append(text_box)
+    test_view_list.append(button)
+    test_view_list.append(press_button)
+
     while not done:
         keys = pg.key.get_pressed()
         if active:
@@ -62,11 +75,15 @@ def main():
                 color = color_active if active else color_inactive
             else:
                 if active:
-                    if event.type == pg.KEYDOWN and event.key != pg.K_RETURN and event.key != pg.K_BACKSPACE:
+                    if event.type == pg.KEYDOWN and event.key != pg.K_RETURN and event.key != pg.K_BACKSPACE: 
                         text += event.unicode
-
-
-
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_UP:
+                        for uielem in test_view_list:
+                            uielem.move(0,-10)
+                    elif event.key == pg.K_DOWN:
+                        for uielem in test_view_list:
+                            uielem.move(0,10)
 
 
         screen.fill((30, 30, 30))

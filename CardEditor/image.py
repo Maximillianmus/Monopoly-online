@@ -39,9 +39,17 @@ class Image:
         return self.image.get_rect()
 
 
-    def render_dynamic(self, screen, game_object_rect, camera):
+    def render_dynamic(self, screen, game_object_rect, viewport):
+        """ renders the image relative to the viewport, the game object rect should have the same size as the the image"""
+        rect = self.rect.move(game_object_rect.x + viewport.x, game_object_rect.y + viewport.y)
+
+        if rect.colliderect(viewport):
+            image = self.get_image()
+            screen.blit(image,rect)
+
+    def render_camera(self, screen, game_object_rect, camera):
         """ renders the image relative to the camera, the game object rect should have the same size as the the image"""
-        rect = self.rect.move(game_object_rect.x - camera.w, game_object_rect.y - camera.h)
+        rect = self.rect.move(game_object_rect.x - camera.x, game_object_rect.y - camera.y)
 
         if rect.colliderect(camera):
             image = self.get_image()
@@ -52,5 +60,3 @@ class Image:
         rect = self.rect.move(game_object_rect.x, game_object_rect.y)
         image = self.get_image()
         screen.blit(image,rect)
-
-

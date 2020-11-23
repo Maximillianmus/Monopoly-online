@@ -9,9 +9,21 @@ class Ui:
         self.rect = self.image.get_rect()
         self.rect.move(x,y)
         self.screen = screen
+        self.viewport_rect = screen.get_rect()
+
+    def set_viewport(self, viewport_rect):
+        self.viewport_rect = viewport_rect
+
+    def move(self, dx, dy):
+        self.rect = self.rect.move(dx, dy)
+        print(self.rect.x)
+
+    def set_position(self,x,y):
+        self.rect = self.rect.move(x,y)
 
     def render(self):
-        self.image.render_static(self.screen, self.rect)
+        """rendering with regards to a rect"""
+        self.image.render_dynamic(self.screen, self.rect, self.viewport_rect)
 
 class Text(Ui):
     """ static text """
@@ -21,6 +33,7 @@ class Text(Ui):
         self.rect = self.image.get_rect()
         self.rect.move(x,y)
         self.screen = screen
+        self.viewport_rect = screen.get_rect()
 
 
 class TextBox(Ui):
@@ -29,7 +42,7 @@ class TextBox(Ui):
         self.rect = input_box
         #rect used for creating the perimeter around the textbox
         self.box_perimiter = pg.Rect(0,0, input_box.w-1, input_box.h-1)
-
+        self.viewport_rect = screen.get_rect()
         self.font = font
         self.active = False
         self.screen = screen
@@ -57,13 +70,14 @@ class TextBox(Ui):
         self.image = image.Image("text_box_surface", self.textbox_surface)
 
     def if_clicked(self, pos):
-        if self.rect.collidepoint(pos):
-            # Toggle the active variable.
-            self.change_state()
-            self.update()
-        else:
-            self.deactivate()
-            self.update()
+        if self.viewport_rect.collidepoint(pos):
+            if self.rect.collidepoint(pos[0]-self.viewport_rect.x, pos[1]-self.viewport_rect.y):
+                # Toggle the active variable.
+                self.change_state()
+                self.update()
+            else:
+                self.deactivate()
+                self.update()
     
     def update_text(self, text):
         if text != self.text:
@@ -83,9 +97,9 @@ class TextBox(Ui):
         if self.text_changed:
             self.update()
             self.text_changed = False
-        self.image.render_static(self.screen, self.rect)
+        self.image.render_dynamic(self.screen, self.rect,self.viewport_rect)
 
-#TODO implement a way to send out a signal that something has changed
+
 class Button(Ui):
     """ Toggable button"""
     def __init__(self, font, screen, button_box, text,text_color=pg.Color("black"),button_color=pg.Color("white") 
@@ -105,6 +119,7 @@ class Button(Ui):
         self.button_active = True
         self.button_surface = pg.Surface((self.rect.w , self.rect.h))
         self.update()
+        self.viewport_rect = screen.get_rect()
 
     def update(self):
         """ method that uppdates the image for the button"""
@@ -126,8 +141,9 @@ class Button(Ui):
 
     def if_clicked(self, pos):
         """checks if the button has been clicked and toggles it if it has"""
-        if self.rect.collidepoint(pos):
-            self.toggle()
+        if self.viewport_rect.collidepoint(pos):
+            if self.rect.collidepoint(pos[0]-self.viewport_rect.x, pos[1]-self.viewport_rect.y):
+                self.toggle()
 
     def toggle(self):
         """ Toggles the button if it is active"""
@@ -160,18 +176,22 @@ class PressButton(Button):
     #overwritten method
     def if_clicked(self, pos):
         """checks if the button has been clicked and toggles it if it has"""
-        if self.rect.collidepoint(pos):
-            self.toggle()
-            self.time_of_press = pg.time.get_ticks()
+        if self.viewport_rect.collidepoint(pos):
+            if self.rect.collidepoint(pos[0]-self.viewport_rect.x, pos[1]-self.viewport_rect.y):
+                self.toggle()
+                self.time_of_press = pg.time.get_ticks()
 
     #overwritten method
     def render(self):
-        if (pg.time.get_ticks() - self.time_of_press ) > 20 and self.active:
+        """Rendering function that also chekcs if the picture should be updated"""
+        time_spent_active = 70
+        if (pg.time.get_ticks() - self.time_of_press ) > time_spent_active and self.active:
             self.detoggle()
             self.update()
-        self.image.render_static(self.screen, self.rect)
+        self.image.render_dynamic(self.screen, self.rect, self.viewport_rect)
 
 
+#TODO implement this, and a class for viewport
 class SelectionList(Ui):
     """ List where you can make a selection """
 
@@ -188,7 +208,7 @@ class EditorObject(Ui):
         self.final_image = self.image
 
     def render(self):
-        self.final_image.render_static(self.screen, self.rect)
+        self.final_image.render_dynamic(self.screen, self.rect, self.viewport_rect)
 
     def add_color_pair(self, color_key, color):
         self.color_key_dict[color_key] = color
