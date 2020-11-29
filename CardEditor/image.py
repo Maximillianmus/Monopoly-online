@@ -63,6 +63,8 @@ class Image:
             image = self.get_image()
             screen.blit(image,rect,partial_rect)
 
+
+    #MAYBE: adding partial rendering would help with rendering large pictures as less time will be spent rendering things outside the window.
     def render_camera(self, screen, game_object_rect, camera):
         """ renders the image relative to the camera, the game object rect should have the same size as the the image"""
         rect = self.rect.move(game_object_rect.x - camera.x, game_object_rect.y - camera.y)
