@@ -16,9 +16,9 @@ class Ui:
 
     def move(self, dx, dy):
         self.rect = self.rect.move(dx, dy)
-        print(self.rect.x)
 
     def set_position(self,x,y):
+        self.rect = self.rect.move(-self.rect.x,-self.rect.y)
         self.rect = self.rect.move(x,y)
 
     def render(self):
@@ -34,7 +34,6 @@ class Text(Ui):
         self.rect.move(x,y)
         self.screen = screen
         self.viewport_rect = screen.get_rect()
-
 
 class TextBox(Ui):
     """ a box where you can write """
@@ -70,14 +69,17 @@ class TextBox(Ui):
         self.image = image.Image("text_box_surface", self.textbox_surface)
 
     def if_clicked(self, pos):
+        clicked = False
         if self.viewport_rect.collidepoint(pos):
             if self.rect.collidepoint(pos[0]-self.viewport_rect.x, pos[1]-self.viewport_rect.y):
+                clicked = True
                 # Toggle the active variable.
                 self.change_state()
                 self.update()
             else:
                 self.deactivate()
                 self.update()
+        return clicked
     
     def update_text(self, text):
         if text != self.text:
@@ -99,11 +101,11 @@ class TextBox(Ui):
             self.text_changed = False
         self.image.render_dynamic(self.screen, self.rect,self.viewport_rect)
 
-
 class Button(Ui):
     """ Toggable button"""
-    def __init__(self, font, screen, button_box, text,text_color=pg.Color("black"),button_color=pg.Color("white") 
+    def __init__(self, font, screen, button_box, text,value,text_color=pg.Color("black"),button_color=pg.Color("white") 
     ,active_color=pg.Color("blue"), active_text_color=pg.Color("white")):
+        self.value = value
         self.font = font
         self.text = text
         self.screen = screen
@@ -120,6 +122,18 @@ class Button(Ui):
         self.button_surface = pg.Surface((self.rect.w , self.rect.h))
         self.update()
         self.viewport_rect = screen.get_rect()
+
+
+    def set_color(self, text= None , button=None, active=None, active_txt = None):
+        """ sets the color scheme"""
+        if text is not None:
+            self.text_color = text
+        if button is not None:
+            self.button_color = button
+        if active is not None:
+            self.active_color = active
+        if active_txt is not None:
+            self.active_text_color = active_txt
 
     def update(self):
         """ method that uppdates the image for the button"""
@@ -141,9 +155,15 @@ class Button(Ui):
 
     def if_clicked(self, pos):
         """checks if the button has been clicked and toggles it if it has"""
+        clicked = False
         if self.viewport_rect.collidepoint(pos):
             if self.rect.collidepoint(pos[0]-self.viewport_rect.x, pos[1]-self.viewport_rect.y):
                 self.toggle()
+                clicked = True
+        return clicked
+
+    def get_value(self):
+        return self.value
 
     def toggle(self):
         """ Toggles the button if it is active"""
@@ -153,6 +173,7 @@ class Button(Ui):
 
     def detoggle(self):
         self.active = False
+        self.update()
 
     def change_text(self, text):
         """ Changes the text in the button"""
@@ -165,21 +186,24 @@ class Button(Ui):
 
 class PressButton(Button):
     """ Pressable button that automaticly unpresses(not toggle )"""
-    def __init__(self, font, screen, button_box, text,text_color=pg.Color("black"),button_color=pg.Color("white") 
+    def __init__(self, font, screen, button_box, value,text,text_color=pg.Color("black"),button_color=pg.Color("white") 
     ,active_color=pg.Color("blue"), active_text_color=pg.Color("white")):
 
         #init from Button
-        Button.__init__(self, font, screen, button_box, text,text_color=pg.Color("black"),button_color=pg.Color("white") 
+        Button.__init__(self, font, screen, button_box, value, text,text_color=pg.Color("black"),button_color=pg.Color("white") 
         ,active_color=pg.Color("blue"), active_text_color=pg.Color("white"))
         self.time_of_press = 0
 
     #overwritten method
     def if_clicked(self, pos):
         """checks if the button has been clicked and toggles it if it has"""
+        clicked = False
         if self.viewport_rect.collidepoint(pos):
             if self.rect.collidepoint(pos[0]-self.viewport_rect.x, pos[1]-self.viewport_rect.y):
                 self.toggle()
                 self.time_of_press = pg.time.get_ticks()
+                clicked = True
+        return clicked
 
     #overwritten method
     def render(self):
@@ -189,11 +213,6 @@ class PressButton(Button):
             self.detoggle()
             self.update()
         self.image.render_dynamic(self.screen, self.rect, self.viewport_rect)
-
-
-#TODO implement this, and a class for viewport
-class SelectionList(Ui):
-    """ List where you can make a selection """
 
 class EditorObject(Ui):
     """ Image in the preview window """
@@ -266,3 +285,128 @@ class Decals(Ui):
     """ decorative/non-functional images """
     def __init__(self, image_name, image_dict, screen ,x, y):
         Ui.__init__(self, image_name, image_dict, screen ,x, y)
+
+
+class Viewbox:
+    """ A collection of UI elements that can be changed together """
+    def __init__(self, x, y, w, h):
+        self.viewport = pg.Rect(x,y,w,h)
+        self.orp= (0,0)
+        self.elements = []
+    
+    def add_ui_element(self, new_elem):
+        new_elem.set_viewport(self.viewport)
+        self.elements.append(new_elem)
+
+    def remove_ui_element(self, elem):
+        self.elements.remove(elem)
+
+    def view_move(self, dx= 0, dy= 0):
+        self.orp = (self.orp[0]+dx, self.orp[1]+dy)
+        for elem in self.elements:
+            elem.move(dx,dy)
+
+    def box_move(self, dx= 0, dy= 0):
+        self.viewport.move_ip(dx,dy)
+
+    def get_elements(self):
+        """ Returns the elements list, OBS it is not a copy"""
+        return self.elements
+    
+    def get_viewport(self):
+        return self.viewport
+
+    #TODO IMPLEMENT PARTIAL RENDERING
+    def render(self):
+        for elem in self.elements:
+            elem.render()
+
+#TODO implement this, and a class for viewport
+class SelectionList(Viewbox):
+    """ List where you can make a selection """
+    def __init__(self, x, y, w, h, font, screen,butt_w=200, butt_h=100):
+        Viewbox.__init__(self, x, y, w, h)
+        self.font = font
+        self.screen = screen
+
+        self.activated_selection = None
+        self.std_butt = pg.Rect(0,0,butt_w,butt_h)
+        self.decals = []
+
+        #colors
+        self.text_color = pg.Color("black")
+        self.button_color = pg.Color("white")
+        self.active_color = pg.Color("blue")
+        self.active_text_color = pg.Color("white")
+    
+    def set_color(self, text= None , button=None, active=None, active_txt = None):
+        """Sets the color for the selectionlist and changes all existing buttons to comply"""
+        if text is not None:
+            self.text_color = text
+        if button is not None:
+            self.button_color = button
+        if active is not None:
+            self.active_color = active
+        if active_txt is not None:
+            self.active_text_color = active_txt
+
+        for elem in self.elements:
+            elem.set_color(self.text_color,self.button_color,self.active_color, self.active_text_color)
+
+        for elem in self.elements:
+            elem.update()
+        
+    
+    def get_active(self):
+        return self.activated_selection
+    
+    def get_active_value(self):
+        return self.activated_selection.value
+
+    def if_clicked(self, pos):
+        """ a function that checks if it is clicked"""
+        if self.viewport.collidepoint(pos):
+            for button in self.elements:
+                if button is not self.activated_selection:
+                    clicked = button.if_clicked(pos)
+                    if clicked and self.activated_selection is not None:
+                        self.activated_selection.detoggle()
+                        self.activated_selection = button
+                        return True
+                    elif clicked and self.activated_selection is None:
+                        self.activated_selection = button
+                        return True
+        return False
+
+    #NOT DONE
+    def add_button(self, butt_txt, butt_val):
+        """ add a button to the list"""
+        list_pixel_height = len(self.elements) * self.std_butt.h
+        button_rect = self.std_butt.move(0,list_pixel_height + self.orp[1])
+        button_element = Button(self.font, self.screen, button_rect, butt_txt, butt_val)
+        button_element.set_viewport(self.viewport)   
+        button_element.set_color(self.text_color, self.button_color, self.active_color, self.active_text_color)
+        self.elements.append(button_element)
+
+    def remove_button(self, butt_val):
+        """ remove a button from the list"""
+        for elem in self.elements:
+            if elem.value == butt_val:
+                self.elements.remove(elem)
+                self.update_butt_pos()
+
+    def update_butt_pos(self):
+        """ correct the position of all buttons in the list""" 
+        y_height = 0
+        for elem in self.elements:
+            elem.set_position(0 , y_height)
+            y_height = y_height + self.std_butt.h
+
+
+    #implement decals, made in painting program?
+    def render(self):
+        """ renders the elements and decals in the selectionlist"""
+        for elem in self.elements:
+            elem.render()
+        for elem in self.decals:
+            elem.render()

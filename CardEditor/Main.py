@@ -25,23 +25,26 @@ def main():
     text = ''
     done = False
 
-    test_view_list = []
     type_time = pg.time.get_ticks()
-    test_view = pg.Rect(200,0,700,700)
+    viewbox = ui.Viewbox(100, 200, 500, 500)
     
 
-    text_box = ui.TextBox(font,screen, pg.Rect(100,300,500,32))
-    text_box.set_viewport(test_view)
+    text_box = ui.TextBox(font,screen, pg.Rect(100,200,500,32))
+    viewbox.add_ui_element(text_box)
 
-    button = ui.Button(font,screen,pg.Rect(100,400,200,50),"button")
-    button.set_viewport(test_view)
+    button = ui.Button(font,screen,pg.Rect(100,300,200,50),"button","button")
+    viewbox.add_ui_element(button)
 
-    press_button = ui.PressButton(font,screen,pg.Rect(100,600,200,50),"pressButton")
-    press_button.set_viewport(test_view)
+    press_button = ui.PressButton(font,screen,pg.Rect(100,400,200,50),"pressButton","pressButton")
+    viewbox.add_ui_element(press_button)
 
-    test_view_list.append(text_box)
-    test_view_list.append(button)
-    test_view_list.append(press_button)
+    selection_list = ui.SelectionList(100,200,200,600,font,screen,butt_h =60)
+    selection_list.add_button("button1", "1")
+    selection_list.add_button("button2", "2")
+    selection_list.add_button("button3", "3")
+    selection_list.add_button("button4", "4")
+    selection_list.add_button("button5", "5")
+
 
     while not done:
         keys = pg.key.get_pressed()
@@ -71,6 +74,9 @@ def main():
                 press_button.if_clicked(event.pos)
                 # Change the current color of the input box.
                 text_box.if_clicked(event.pos)
+                #selection list, check if clicked
+                selection_list.if_clicked(event.pos)
+
 
                 color = color_active if active else color_inactive
             else:
@@ -79,11 +85,19 @@ def main():
                         text += event.unicode
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_UP:
-                        for uielem in test_view_list:
-                            uielem.move(0,-10)
+                        selection_list.view_move(dy=-10)
                     elif event.key == pg.K_DOWN:
-                        for uielem in test_view_list:
-                            uielem.move(0,10)
+                        selection_list.view_move(dy=10)
+                    elif event.key == pg.K_RIGHT:
+                        selection_list.view_move(dx=10)
+                    elif event.key == pg.K_LEFT:
+                        selection_list.view_move(dx=-10)
+                    elif event.key == pg.K_k:
+                        selection_list.add_button("new button", "new")
+                    elif event.key == pg.K_l:
+                        selection_list.remove_button("3")
+                    elif event.key == pg.K_c:
+                        selection_list.set_color(pg.Color("purple"), pg.Color("yellow"),pg.Color("green"),pg.Color("brown"))
 
 
         screen.fill((30, 30, 30))
@@ -98,9 +112,9 @@ def main():
         pg.draw.rect(screen, color, input_box, 2)
 
         text_box.update_text(text)
-        text_box.render()
-        button.render()
-        press_button.render()
+        #viewbox.render()
+        selection_list.render()
+
 
         pg.display.flip()
         clock.tick(30)

@@ -40,12 +40,28 @@ class Image:
 
 
     def render_dynamic(self, screen, game_object_rect, viewport):
-        """ renders the image relative to the viewport, the game object rect should have the same size as the the image"""
+        """ renders the image relative to the viewport, the game object rect should have the same size as the the image. 
+        images will be partially rendered if they are not fully within the viewport"""
         rect = self.rect.move(game_object_rect.x + viewport.x, game_object_rect.y + viewport.y)
-
+        
         if rect.colliderect(viewport):
+            partial_rect = viewport.clip(rect)
+
+            if rect.y < viewport.y:
+                delta_y = self.rect.h - partial_rect.h
+            else:
+                delta_y = 0
+
+            if rect.x < viewport.x:
+                delta_x = self.rect.w - partial_rect.w
+            else:
+                delta_x = 0
+
+            partial_rect.move_ip(-rect.x, -rect.y)
+            rect.move_ip(delta_x,delta_y)
+
             image = self.get_image()
-            screen.blit(image,rect)
+            screen.blit(image,rect,partial_rect)
 
     def render_camera(self, screen, game_object_rect, camera):
         """ renders the image relative to the camera, the game object rect should have the same size as the the image"""
