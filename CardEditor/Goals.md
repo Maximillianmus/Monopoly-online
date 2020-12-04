@@ -10,7 +10,7 @@ A card editor that will be used to implement cards for a monopoly game.
  \*** = Critical 
 ## Functionality goals
 
-- Be able to preview cards before saving to a file, if possible in realtime **
+- Be able to preview cards before saving to a file, if possible in realtime ** 
 - Write card text ***
 - Be able to use tags in text *
 - Be able to use card tags to define properties of a card. ***
@@ -27,14 +27,14 @@ A card editor that will be used to implement cards for a monopoly game.
 ## Technical goals
 
 ### UI
-- list with scroll, for cards/gameboard slots
-- boxes to write in, both text and numbers
+- list with scroll, for cards/gameboard slots ✓
+- boxes to write in, both text and numbers ✓
 - preview card
 - editing buttons: save, load, delete
 - file searcher
-- Mouse functionality
-- Add picture
-- Add text
+- Mouse functionality ✓
+- Add picture ✓
+- Add text ✓
 - tag list(maybe show the tag list when card is selected)
 - Add tags to card
 - Add new tag

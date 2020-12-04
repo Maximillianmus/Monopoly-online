@@ -332,6 +332,8 @@ class SelectionList(Viewbox):
         self.activated_selection = None
         self.std_butt = pg.Rect(0,0,butt_w,butt_h)
         self.decals = []
+        self.scroll_speed = 30
+        self.scroll_pos = 0
 
         #colors
         self.text_color = pg.Color("black")
@@ -356,12 +358,28 @@ class SelectionList(Viewbox):
         for elem in self.elements:
             elem.update()
         
+    def set_scroll_speed(self, speed):
+        self.scroll_speed = speed
     
     def get_active(self):
         return self.activated_selection
     
     def get_active_value(self):
         return self.activated_selection.value
+
+
+    #add a limit, should probably be so the top button can't go up and the bottom button can't go down
+    def if_scrolled(self,pos,button_value):
+        if self.viewport.collidepoint(pos):
+            if button_value == 5 and self.scroll_pos > self.viewport.h - self.std_butt.h * len(self.elements):
+                self.view_move(dy=-self.scroll_speed)
+                self.scroll_pos += -self.scroll_speed
+                return True
+            elif button_value == 4 and self.scroll_pos < 0:
+                self.view_move(dy=self.scroll_speed)
+                self.scroll_pos += self.scroll_speed
+                return True
+        return False
 
     def if_clicked(self, pos):
         """ a function that checks if it is clicked"""
@@ -378,7 +396,6 @@ class SelectionList(Viewbox):
                         return True
         return False
 
-    #NOT DONE
     def add_button(self, butt_txt, butt_val):
         """ add a button to the list"""
         list_pixel_height = len(self.elements) * self.std_butt.h
@@ -402,8 +419,6 @@ class SelectionList(Viewbox):
             elem.set_position(0 , y_height)
             y_height = y_height + self.std_butt.h
 
-
-    #implement decals, made in painting program?
     def render(self):
         """ renders the elements and decals in the selectionlist"""
         for elem in self.elements:

@@ -44,6 +44,12 @@ def main():
     selection_list.add_button("button3", "3")
     selection_list.add_button("button4", "4")
     selection_list.add_button("button5", "5")
+    selection_list.add_button("button6", "6")
+    selection_list.add_button("button7", "7")
+    selection_list.add_button("button8", "8")
+    selection_list.add_button("button9", "9")
+    selection_list.add_button("button10", "10")
+    selection_list.add_button("button11", "11")
 
 
     while not done:
@@ -75,8 +81,10 @@ def main():
                 # Change the current color of the input box.
                 text_box.if_clicked(event.pos)
                 #selection list, check if clicked
-                selection_list.if_clicked(event.pos)
-
+                if event.button ==1:
+                    selection_list.if_clicked(event.pos)
+                selection_list.if_scrolled(event.pos,event.button)
+                
 
                 color = color_active if active else color_inactive
             else:
@@ -117,7 +125,7 @@ def main():
 
 
         pg.display.flip()
-        clock.tick(30)
+        clock.tick(60)
 
 
 if __name__ == '__main__':
