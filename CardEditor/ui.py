@@ -37,7 +37,7 @@ class Text(Ui):
 
 class TextBox(Ui):
     """ a box where you can write """
-    def __init__(self, font, screen, input_box, text_color=pg.Color("black"), active_color=pg.Color("blue") ):
+    def __init__(self, font, screen, input_box, value,text_color=pg.Color("black"), active_color=pg.Color("blue") ):
         self.rect = input_box
         #rect used for creating the perimeter around the textbox
         self.box_perimiter = pg.Rect(0,0, input_box.w-1, input_box.h-1)
@@ -52,6 +52,7 @@ class TextBox(Ui):
         self.text_changed = False
         self.textbox_surface = pg.Surface((self.rect.w , self.rect.h))
         self.update()
+        self.value = value
 
     def update(self):
         self.textbox_surface.fill(self.bg_color)
@@ -88,6 +89,9 @@ class TextBox(Ui):
 
     def get_text(self):
         return self.text
+
+    def get_value(self):
+        return self.value
 
     def change_state(self):
         self.active = not self.active
@@ -164,6 +168,9 @@ class Button(Ui):
 
     def get_value(self):
         return self.value
+
+    def get_status(self):
+        return self.active
 
     def toggle(self):
         """ Toggles the button if it is active"""
@@ -364,18 +371,21 @@ class SelectionList(Viewbox):
     def get_active(self):
         return self.activated_selection
     
+    def get_value(self):
+        return None
+
     def get_active_value(self):
         return self.activated_selection.value
 
 
     #add a limit, should probably be so the top button can't go up and the bottom button can't go down
-    def if_scrolled(self,pos,button_value):
+    def if_scrolled(self,pos,button):
         if self.viewport.collidepoint(pos):
-            if button_value == 5 and self.scroll_pos > self.viewport.h - self.std_butt.h * len(self.elements):
+            if button == 5 and self.scroll_pos > self.viewport.h - self.std_butt.h * len(self.elements):
                 self.view_move(dy=-self.scroll_speed)
                 self.scroll_pos += -self.scroll_speed
                 return True
-            elif button_value == 4 and self.scroll_pos < 0:
+            elif button == 4 and self.scroll_pos < 0:
                 self.view_move(dy=self.scroll_speed)
                 self.scroll_pos += self.scroll_speed
                 return True
