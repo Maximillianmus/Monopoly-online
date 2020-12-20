@@ -1,5 +1,6 @@
 """ Classes for the UI elements """
 import pygame as pg
+import xml.etree.ElementTree as xml
 import image
 
 class Ui:
@@ -223,8 +224,9 @@ class PressButton(Button):
 
 class EditorObject(Ui):
     """ Image in the preview window """
-    def __init__(self, image_name, image_dict, screen ,x, y):
+    def __init__(self, image_name, image_dict, screen ,name,x, y, id_num):
         Ui.__init__(self, image_name, image_dict, screen ,x, y)
+        self.path = image_name
         self.color_key_dict = {}
         self.image_dict = image_dict
         self.text_fields_dict = {}
@@ -233,48 +235,115 @@ class EditorObject(Ui):
         self.image_element_dict = {}
         self.final_image = self.image
 
+        self.id_num = id_num
+        self.name = name
+        #used by save function
+        self.changed = False
+
     def render(self):
         self.final_image.render_dynamic(self.screen, self.rect, self.viewport_rect)
 
     def add_color_pair(self, color_key, color):
         self.color_key_dict[color_key] = color
+        self.changed = True
 
     def remove_color_pair(self, color_key):
         self.color_key_dict.pop(color_key)
+        self.changed = True
 
-    def add_text(self, text, text_tag):
-        self.text_fields_dict[text_tag] = text
+    def add_text(self, text, text_tag, x, y, size, font):
+        self.text_fields_dict[text_tag] = (text,x,y,size,font)
+        self.changed = True
 
     def remove_text(self, text_tag):
         self.text_fields_dict.pop(text_tag)
+        self.changed = True
    
     def add_number(self, number_tag, number):
         self.number_dict[number_tag] = number
+        self.changed = True
    
     def remove_number(self, number_tag):
         self.number_dict.pop(number_tag)
+        self.changed = True
 
     def add_tag(self, tag):
         self.tag_list.append(tag)
+        self.changed = True
 
     def remove_tag(self, tag_index):
         self.tag_list.pop(tag_index)
+        self.changed = True
 
-    def add_image(self, image_name):
-        self.image_element_dict[image_name] = self.image_dict[image_name]
+    def add_image(self, image_name, path, x, y):
+        img = self.image_dict[path]
+        rect = pg.Rect(x,y,img.get_rect().w,img.get_rect().h)
+        self.image_element_dict[image_name] = (img,rect)
+        self.changed = True
 
     def remove_image(self, image_name):
         self.image_element_dict.pop(image_name)
+        self.changed = True
+
+    def set_id(self, new_id):
+        self.id_num = new_id
+        self.changed = True
     
     # TODO: Implement the following three functions
     def update(self):
         pass
 
-    def load_from_xml(self):
-        pass
+    def load_from_xml(self, xml_root):
+        for card in xml_root.findall("card"):
+            if card.get("id") == str(self.id_num):
+                card_attributes = card.attrib
+                self.name = card_attributes.get("name")
+                #TODO NOT DONE
 
-    def save_to_xml(self):
-        pass
+    def save_to_xml(self, xml_root):
+        if self.changed:
+            self.changed = False
+            for card in xml_root.findall("card"):
+                if card.get("id") == str(self.id_num):
+                    card.remove()
+
+            new_card = xml.SubElement(xml_root, "card")
+            new_card.set("name",self.name)
+            new_card.set("id",self.id_num)
+            xml.SubElement(new_card, "base_img").text = self.path
+            
+            for image_name in self.image_element_dict:
+                image_tuple = self.image_element_dict.get(image_name)
+                card_image = xml.SubElement(new_card, "img")
+                card_image.set("name", image_name )
+                card_image.set("x", image_tuple[1].x)
+                card_image.set("y", image_tuple[1].y)
+                card_image.text = image_tuple[0].path
+
+            for text_field in self.text_fields_dict:
+                text_bundle = self.text_fields_dict.get(text_field)
+                card_text = xml.SubElement(new_card, "text")
+                card_text.set("name", text_field)
+                card_text.set("size", text_bundle[3])
+                card_text.set("font", text_bundle[4])
+                card_text.set("x", text_bundle[1])
+                card_text.set("y", text_bundle[2])
+                card_text.text = text_bundle[0]
+
+            for color_key in self.color_key_dict:
+                color_pair = xml.SubElement(new_card, "key_color")
+                color_pair.set("kcolor", color_key)
+                color_pair.text = self.color_key_dict[color_key]
+
+            tag_elem = xml.SubElement(new_card, "tag_list")
+            for order, tag in enumerate(self.tag_list):
+                tag_x = xml.SubElement(tag_elem, "tag")
+                tag_x.text = tag
+                tag_x.set("order", order)
+                if self.number_dict.get(tag) is not None:
+                    tag_x.set("value", str(self.number_dict.get(tag)))
+                else:
+                    tag_x.set("value", "")
 
     def get_images(self):
         return self.image_element_dict.copy()

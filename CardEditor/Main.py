@@ -29,7 +29,7 @@ def main():
     viewbox = ui.Viewbox(100, 200, 500, 500)
     
 
-    text_box = ui.TextBox(font,screen, pg.Rect(100,200,500,32))
+    text_box = ui.TextBox(font,screen, pg.Rect(100,200,500,32), "testtextbox")
     viewbox.add_ui_element(text_box)
 
     button = ui.Button(font,screen,pg.Rect(100,300,200,50),"button","button")
