@@ -1,7 +1,7 @@
 """ Classes for the UI elements """
 import pygame as pg
 import xml.etree.ElementTree as xml
-import image
+import image as image_module
 
 class Ui:
     """ basic ui element """
@@ -30,7 +30,7 @@ class Text(Ui):
     """ static text """
     def __init__(self, font, text, x, y, screen,color=pg.Color("black")):
         text_image = font.render(text, True, color)
-        self.image = image.Image(text, text_image)
+        self.image = image_module.Image(text, text_image)
         self.rect = self.image.get_rect()
         self.rect.move(x,y)
         self.screen = screen
@@ -68,7 +68,7 @@ class TextBox(Ui):
     
         self.textbox_surface.blit(self.font.render(self.text, True, self.text_color), (self.box_perimiter.x+5 , self.box_perimiter.y+5))
         
-        self.image = image.Image("text_box_surface", self.textbox_surface)
+        self.image = image_module.Image("text_box_surface", self.textbox_surface)
 
     def if_clicked(self, pos):
         clicked = False
@@ -155,7 +155,7 @@ class Button(Ui):
         text_rect = text_img.get_rect(center=(self.rect.w/2, self.rect.h/2))
         
         self.button_surface.blit(text_img,text_rect)
-        self.image = image.Image("button_surface", self.button_surface)
+        self.image = image_module.Image("button_surface", self.button_surface)
 
 
     def if_clicked(self, pos):
@@ -233,7 +233,7 @@ class EditorObject(Ui):
         self.number_dict = {}
         self.tag_list = []
         self.image_element_dict = {}
-        self.final_image = self.image
+        self.final_image = image_module.Image("finImg", pg.Surface((self.rect.w, self.rect.h)))
 
         self.id_num = id_num
         self.name = name
@@ -251,8 +251,8 @@ class EditorObject(Ui):
         self.color_key_dict.pop(color_key)
         self.changed = True
 
-    def add_text(self, text, text_tag, x, y, size, font):
-        self.text_fields_dict[text_tag] = (text,x,y,size,font)
+    def add_text(self, text, text_tag, x, y, size, font, color):
+        self.text_fields_dict[text_tag] = (text,x,y,size,font, color)
         self.changed = True
 
     def remove_text(self, text_tag):
@@ -288,62 +288,116 @@ class EditorObject(Ui):
     def set_id(self, new_id):
         self.id_num = new_id
         self.changed = True
+
+    def set_base_img(self, path):
+        self.path = path
+        self.image = self.image_dict[self.path]
+        self.changed = True
+
     
     # TODO: Implement the following three functions
     def update(self):
-        pass
+        if self.changed:
+            self.changed = False
 
+            self.final_image.image.blit(self.image.image, (0,0))
+
+            for kcol in self.color_key_dict:
+                px_ar = pg.PixelArray(self.final_image.image)
+                px_ar.replace(pg.Color(self.color_key_dict[kcol]), pg.Color(kcol))
+                px_ar.close()
+                #TODO Implement a 'colorshifter' that changes every pixel of a png from a key color to a resulting color
+
+            for image_key in self.image_element_dict:
+                image_element = self.image_element_dict[image_key]
+                self.final_image.image.blit( image_element[0].image, image_element[1])
+
+            for text_k in self.text_fields_dict:
+                text = self.text_fields_dict[text_k]
+                font_object = pg.font.SysFont(text[4], text[3])
+                text_image = font_object.render(text[0], True, text[5])
+                self.final_image.image.blit( text_image, (text[1],text[2]))
+
+            
+                
+            
     def load_from_xml(self, xml_root):
         for card in xml_root.findall("card"):
             if card.get("id") == str(self.id_num):
-                card_attributes = card.attrib
-                self.name = card_attributes.get("name")
-                #TODO NOT DONE
+                self.name = card.get("name")
+                self.path = card.find("base_img").text
+                self.image = self.image_dict[self.path]
+                self.final_image = image_module.Image("finImg", pg.Surface((self.rect.w, self.rect.h)))
+
+                x, y = self.rect.x , self.rect.y
+                self.rect = self.image.get_rect()
+                self.rect.move(x,y)
+
+                for image in card.findall("img"):
+                    self.add_image(image.get("name"),image.text, int(image.get("x")), int(image.get("y")))
+                
+                for text in card.findall("text"):
+                    self.add_text(text.text, text.get("name"), int(text.get("x")), int(text.get("y")), int(text.get("size")), text.get("font"), text.get("color"))
+
+                for kcol in card.findall("key_color"):
+                    self.add_color_pair(kcol.get("kcolor"), kcol.text)
+
+                tag_list = card.find("tag_list")
+                for tag in tag_list.findall("tag"):
+                    if tag.get("value") == "":
+                        self.add_tag(tag.text)
+                    else:
+                        self.add_tag(tag.text)
+                        self.add_number(tag.text, int(tag.get("value")))
+
+                self.changed = True
+
+
 
     def save_to_xml(self, xml_root):
-        if self.changed:
-            self.changed = False
-            for card in xml_root.findall("card"):
-                if card.get("id") == str(self.id_num):
-                    card.remove()
+        for card in xml_root.findall("card"):
+            if card.get("id") == str(self.id_num):
+                xml_root.remove(card)
 
-            new_card = xml.SubElement(xml_root, "card")
-            new_card.set("name",self.name)
-            new_card.set("id",self.id_num)
-            xml.SubElement(new_card, "base_img").text = self.path
-            
-            for image_name in self.image_element_dict:
-                image_tuple = self.image_element_dict.get(image_name)
-                card_image = xml.SubElement(new_card, "img")
-                card_image.set("name", image_name )
-                card_image.set("x", image_tuple[1].x)
-                card_image.set("y", image_tuple[1].y)
-                card_image.text = image_tuple[0].path
+        new_card = xml.SubElement(xml_root, "card")
+        print(xml_root.findall("card"))
+        new_card.set("name",self.name)
+        new_card.set("id",str(self.id_num))
+        xml.SubElement(new_card, "base_img").text = self.path
+        
+        for image_name in self.image_element_dict:
+            image_tuple = self.image_element_dict.get(image_name)
+            card_image = xml.SubElement(new_card, "img")
+            card_image.set("name", image_name )
+            card_image.set("x", str(image_tuple[1].x))
+            card_image.set("y", str(image_tuple[1].y))
+            card_image.text = image_tuple[0].path
 
-            for text_field in self.text_fields_dict:
-                text_bundle = self.text_fields_dict.get(text_field)
-                card_text = xml.SubElement(new_card, "text")
-                card_text.set("name", text_field)
-                card_text.set("size", text_bundle[3])
-                card_text.set("font", text_bundle[4])
-                card_text.set("x", text_bundle[1])
-                card_text.set("y", text_bundle[2])
-                card_text.text = text_bundle[0]
+        for text_field in self.text_fields_dict:
+            text_bundle = self.text_fields_dict.get(text_field)
+            card_text = xml.SubElement(new_card, "text")
+            card_text.set("name", text_field)
+            card_text.set("size", str(text_bundle[3]))
+            card_text.set("font", text_bundle[4])
+            card_text.set("x", str(text_bundle[1]))
+            card_text.set("y", str(text_bundle[2]))
+            card_text.set("color", text_bundle[5])
+            card_text.text = text_bundle[0]
 
-            for color_key in self.color_key_dict:
-                color_pair = xml.SubElement(new_card, "key_color")
-                color_pair.set("kcolor", color_key)
-                color_pair.text = self.color_key_dict[color_key]
+        for color_key in self.color_key_dict:
+            color_pair = xml.SubElement(new_card, "key_color")
+            color_pair.set("kcolor", color_key)
+            color_pair.text = self.color_key_dict[color_key]
 
-            tag_elem = xml.SubElement(new_card, "tag_list")
-            for order, tag in enumerate(self.tag_list):
-                tag_x = xml.SubElement(tag_elem, "tag")
-                tag_x.text = tag
-                tag_x.set("order", order)
-                if self.number_dict.get(tag) is not None:
-                    tag_x.set("value", str(self.number_dict.get(tag)))
-                else:
-                    tag_x.set("value", "")
+        tag_elem = xml.SubElement(new_card, "tag_list")
+        for order, tag in enumerate(self.tag_list):
+            tag_x = xml.SubElement(tag_elem, "tag")
+            tag_x.text = tag
+            tag_x.set("order", str(order))
+            if self.number_dict.get(tag) is not None:
+                tag_x.set("value", str(self.number_dict.get(tag)))
+            else:
+                tag_x.set("value", "")
 
     def get_images(self):
         return self.image_element_dict.copy()

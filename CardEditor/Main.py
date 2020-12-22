@@ -3,6 +3,8 @@
 #  It will also save a picture that is the card itself.
 import pygame as pg
 import ui
+import image
+import xml.etree.ElementTree as xml
 
 # constants
 WINDOW_WIDTH = 1000
@@ -24,6 +26,8 @@ def main():
     active = False
     text = ''
     done = False
+
+    image_dict = image.create_image_class_dict("Images")
 
     type_time = pg.time.get_ticks()
     viewbox = ui.Viewbox(100, 200, 500, 500)
@@ -51,6 +55,17 @@ def main():
     selection_list.add_button("button10", "10")
     selection_list.add_button("button11", "11")
 
+    
+    tree = xml.parse('cards.xml')
+    test_root = tree.getroot()
+
+    xml_test_object = ui.EditorObject("card_base_test.png", image_dict, screen, "test card", 100,100, "0")
+    xml_test_object.load_from_xml(test_root)
+
+    xml_test_object.add_text("hello", "hello1", 0, 0, 32, "default", "black")
+    xml_test_object.update()
+    xml_test_object.save_to_xml(test_root)
+    tree.write("cards.xml")
 
     while not done:
         keys = pg.key.get_pressed()
@@ -109,6 +124,9 @@ def main():
 
 
         screen.fill((30, 30, 30))
+
+        # Render the editor object, connected too the xml
+        xml_test_object.render()
         # Render the current text.
         txt_surface = font.render(text, True, color)
         # Resize the box if the text is too long.
