@@ -108,13 +108,13 @@ def main():
                         text += event.unicode
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_UP:
-                        selection_list.view_move(dy=-10)
+                        selection_list.move(dy=-10)
                     elif event.key == pg.K_DOWN:
-                        selection_list.view_move(dy=10)
+                        selection_list.move(dy=10)
                     elif event.key == pg.K_RIGHT:
-                        selection_list.view_move(dx=10)
+                        selection_list.move(dx=10)
                     elif event.key == pg.K_LEFT:
-                        selection_list.view_move(dx=-10)
+                        selection_list.move(dx=-10)
                     elif event.key == pg.K_k:
                         selection_list.add_button("new button", "new")
                     elif event.key == pg.K_l:

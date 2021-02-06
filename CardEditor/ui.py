@@ -304,7 +304,7 @@ class EditorObject(Ui):
 
             for kcol in self.color_key_dict:
                 px_ar = pg.PixelArray(self.final_image.image)
-                px_ar.replace(pg.Color(self.color_key_dict[kcol]), pg.Color(kcol))
+                px_ar.replace(pg.Color(kcol), pg.Color(self.color_key_dict[kcol]))
                 px_ar.close()
                 #TODO Implement a 'colorshifter' that changes every pixel of a png from a key color to a resulting color
 
@@ -423,7 +423,14 @@ class Viewbox:
         self.viewport = pg.Rect(x,y,w,h)
         self.orp= (0,0)
         self.elements = []
+        self.eventqueue = None
+
+        # Implemented so recursive viewports work
+        self.viewport_rect = pg.Rect(0,0,0,0)
     
+    def set_queue(self, queue):
+        self.eventqueue = queue
+
     def add_ui_element(self, new_elem):
         new_elem.set_viewport(self.viewport)
         self.elements.append(new_elem)
@@ -431,7 +438,7 @@ class Viewbox:
     def remove_ui_element(self, elem):
         self.elements.remove(elem)
 
-    def view_move(self, dx= 0, dy= 0):
+    def move(self, dx= 0, dy=0):
         self.orp = (self.orp[0]+dx, self.orp[1]+dy)
         for elem in self.elements:
             elem.move(dx,dy)
@@ -443,8 +450,24 @@ class Viewbox:
         """ Returns the elements list, OBS it is not a copy"""
         return self.elements
     
+    def if_clicked(self, pos):
+        """ True if clicked """
+        if self.viewport.collidepoint(pos):
+            for elemt in self.elements:
+                clicked = elemt.if_clicked(pos)
+                if clicked:
+                    self.eventqueue.append(elemt)
+
+        return clicked
+
+    def set_viewport(self, viewport_rect):
+        self.viewport_rect = viewport_rect
+
     def get_viewport(self):
         return self.viewport
+    
+    def get_value(self):
+        return None
 
     #TODO IMPLEMENT PARTIAL RENDERING
     def render(self):
@@ -505,11 +528,11 @@ class SelectionList(Viewbox):
     def if_scrolled(self,pos,button):
         if self.viewport.collidepoint(pos):
             if button == 5 and self.scroll_pos > self.viewport.h - self.std_butt.h * len(self.elements):
-                self.view_move(dy=-self.scroll_speed)
+                self.move(dy=-self.scroll_speed)
                 self.scroll_pos += -self.scroll_speed
                 return True
             elif button == 4 and self.scroll_pos < 0:
-                self.view_move(dy=self.scroll_speed)
+                self.move(dy=self.scroll_speed)
                 self.scroll_pos += self.scroll_speed
                 return True
         return False
@@ -537,6 +560,115 @@ class SelectionList(Viewbox):
         button_element.set_viewport(self.viewport)   
         button_element.set_color(self.text_color, self.button_color, self.active_color, self.active_text_color)
         self.elements.append(button_element)
+
+    def remove_button(self, butt_val):
+        """ remove a button from the list"""
+        for elem in self.elements:
+            if elem.value == butt_val:
+                self.elements.remove(elem)
+                self.update_butt_pos()
+
+    def update_butt_pos(self):
+        """ correct the position of all buttons in the list""" 
+        y_height = 0
+        for elem in self.elements:
+            elem.set_position(0 , y_height)
+            y_height = y_height + self.std_butt.h
+
+    def render(self):
+        """ renders the elements and decals in the selectionlist"""
+        for elem in self.elements:
+            elem.render()
+        for elem in self.decals:
+            elem.render()
+    
+class Elementlist(Viewbox):
+    """ List where you can make a selection """
+    def __init__(self, x, y, w, h, font, screen,butt_w=200, butt_h=100):
+        Viewbox.__init__(self, x, y, w, h)
+        self.font = font
+        self.screen = screen
+
+        self.scroll_speed = 30
+        self.scroll_pos = 0
+        self.std_viewport = pg.Rect(0,0,500,300)
+
+        #colors
+        self.elem_bck_color = pg.Color("white")
+        self.text_color = pg.Color("black")
+        self.button_color = pg.Color("white")
+        self.active_color = pg.Color("blue")
+        self.active_text_color = pg.Color("white")
+
+    #TODO: ADD viewport elements.
+    def set_color(self, text= None , button=None, active=None, active_txt = None, elem_bck_color = None):
+        """Sets the color for the selectionlist and changes all existing buttons to comply"""
+        if text is not None:
+            self.text_color = text
+        if button is not None:
+            self.button_color = button
+        if active is not None:
+            self.active_color = active
+        if active_txt is not None:
+            self.active_text_color = active_txt
+        if elem_bck_color is not None:
+            self.elem_bck_color = elem_bck_color
+
+        for elem in self.elements:
+            elem.set_color(self.text_color,self.button_color,self.active_color, self.active_text_color)
+
+        #TODO: ADD color change to element viewport background
+
+        for elem in self.elements:
+            elem.update()
+        
+    def set_scroll_speed(self, speed):
+        self.scroll_speed = speed
+
+    def get_active_value(self):
+        return self.activated_selection.value
+
+
+    def if_scrolled(self,pos,button):
+        if self.viewport.collidepoint(pos):
+            if button == 5 and self.scroll_pos > self.viewport.h - self.std_viewport.h * len(self.elements):
+                self.move(dy=-self.scroll_speed)
+                self.scroll_pos += -self.scroll_speed
+                return True
+            elif button == 4 and self.scroll_pos < 0:
+                self.move(dy=self.scroll_speed)
+                self.scroll_pos += self.scroll_speed
+                return True
+        return False
+
+    def if_clicked(self, pos):
+        """ a function that checks if it is clicked"""
+        if self.viewport.collidepoint(pos):
+            for elemt in self.elements:
+                clicked = elemt.if_clicked(pos)
+
+        return clicked
+
+    def add_viewport(self, view_type):
+        """ add a button to the list"""
+        list_pixel_height = len(self.elements) * self.std_viewport.h
+        viewport_rect = self.std_viewport.move(0,list_pixel_height + self.orp[1])
+        viewport_element = Viewbox(self.std_viewport.x, self.std_viewport.y,self.std_viewport.w, self.std_viewport.h)
+        viewport_element.set_viewport(self.viewport)
+
+        if view_type == "Base_img":
+            pass
+        elif view_type == "img":
+            pass
+        elif view_type == "text":
+            pass
+        elif view_type == "key_color":
+            pass
+        elif view_type == "tags":
+            pass
+
+
+        self.elements.append(viewport_element)
 
     def remove_button(self, butt_val):
         """ remove a button from the list"""
